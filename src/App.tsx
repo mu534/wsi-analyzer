@@ -1,65 +1,104 @@
 import React, { useState, useEffect } from "react";
-import { CaseProvider } from "./context/CaseContext";
+import { CaseProvider, useCase } from "./context/CaseContext";
 import ImageViewer from "./components/ImageViewer";
-import FindingsPanel from "./components/FindingsPanel";
+import Sidebar from "./components/Sidebar";
 import ZoomedHub from "./components/ZoomedHub";
-import ReportButton from "./components/ReportButton";
-import ThemeToggle from "./components/ThemeToggle";
 
 const App: React.FC = () => {
-  const [region, setRegion] = useState({ x: 0, y: 0 });
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [detectionResults, setDetectionResults] = useState<unknown[]>([]);
+  const { caseData } = useCase();
+  const [region, setRegion] = useState({ x: 0.5, y: 0.5 });
+  const [detectionResults, setDetectionResults] = useState<
+    [number, number, number, number, string][]
+  >([]);
 
   useEffect(() => {
-    // Fetch detection results from output.json
-    fetch("/output.json")
-      .then((res) => res.json())
-      .then((data) => setDetectionResults(data.detection_results))
-      .catch((err) => console.error("Error fetching detection results:", err));
-  }, []);
+    setDetectionResults(caseData.detectionResults);
+  }, [caseData.detectionResults]);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
+  // Format timestamp to match wireframe
+  const timestamp = new Date().toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 
   return (
-    <CaseProvider>
-      <div
-        className={`container mx-auto p-4 h-screen ${
-          theme === "dark" ? "dark" : ""
-        }`}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-            Whole Slide Image Viewer
-          </h1>
-          <ThemeToggle theme={theme} setTheme={setTheme} />
+    <div className="min-h-screen bg-gray-100 p-4 flex flex-col">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <button className="p-2 bg-gray-200 rounded">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+          <span className="text-lg font-semibold text-gray-700">
+            {timestamp}
+          </span>
         </div>
-        <div className="grid grid-cols-4 grid-rows-[auto_1fr] h-[calc(100%-2.5rem)] gap-4">
-          {/* Left: Findings Panel */}
-          <div className="col-span-1 row-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 overflow-y-auto">
-            <FindingsPanel />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1 space-x-4">
+        {/* Left: Sidebar */}
+        <div className="w-1/4">
+          <Sidebar />
+        </div>
+
+        {/* Right: WSI Viewer and Hub */}
+        <div className="w-3/4 flex flex-col space-y-4">
+          {/* Top: Hub View */}
+          <div className="flex justify-between items-center bg-gray-200 p-2 rounded">
+            <div className="flex space-x-2">
+              <span>WSI Zoomed out View (Hub)</span>
+              <span>Patient ID: {caseData.patientId}</span>
+              <span>{caseData.sampleType}</span>
+            </div>
+            <div className="w-1/3">
+              <ZoomedHub region={region} />
+            </div>
           </div>
+
           {/* Center: WSI Viewer */}
-          <div className="col-span-2 row-span-2 bg-gray-800 dark:bg-gray-900 rounded-lg overflow-hidden">
+          <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden relative">
             <ImageViewer
               onRegionChange={setRegion}
               detectionResults={detectionResults}
             />
+            <div className="absolute top-2 left-2 text-white">
+              WSI Zoomed IN View
+            </div>
           </div>
-          {/* Top-Right: Zoomed Hub View */}
-          <div className="col-span-1 row-span-1 bg-gray-200 dark:bg-gray-700 rounded-lg p-4">
-            <ZoomedHub region={region} />
-          </div>
-          {/* Bottom-Right: Report Button */}
-          <div className="col-span-1 row-span-1 flex items-end justify-center">
-            <ReportButton />
+
+          {/* Bottom Right: Report Button */}
+          <div className="flex justify-end">
+            <button className="bg-blue-500 text-white p-2 rounded">
+              Report
+            </button>
           </div>
         </div>
       </div>
-    </CaseProvider>
+    </div>
   );
 };
 
-export default App;
+export default () => (
+  <CaseProvider>
+    <App />
+  </CaseProvider>
+);
