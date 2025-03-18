@@ -5,11 +5,28 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { CaseData, CaseContextType } from "./types";
 import WSIImage from "../assets/images/7_20241209_024613.png";
 
+// 📝 Define CaseData Interface
+interface CaseData {
+  patientId: string;
+  sampleType: string;
+  imageSrc: string;
+  detectionResults: [number, number, number, number, string][];
+  rbcData: Record<string, { count: number; percentage: string }>;
+  wbcData: Record<string, { count: number; percentage: string }>;
+  platelets: { count: number; percentage: string };
+}
+
+interface CaseContextType {
+  caseData: CaseData;
+  detectionResults: [number, number, number, number, string][];
+}
+
+// 🌟 Create Context
 const CaseContext = createContext<CaseContextType | undefined>(undefined);
 
+// 🏥 Case Provider Component
 export const CaseProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -19,7 +36,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({
     imageSrc: WSIImage,
     detectionResults: [],
     rbcData: {
-      "Angle Cells": { count: 222, percentage: "67%" },
+      "Angled Cells": { count: 222, percentage: "67%" },
       "Borderline Ovalocytes": { count: 50, percentage: "20%" },
       "Burr Cells": { count: 87, percentage: "34%" },
       "Fragmented Cells": { count: 2, percentage: "0.12%" },
@@ -32,14 +49,26 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({
       Lymphocyte: { count: 87, percentage: "34%" },
       Monocyte: { count: 2, percentage: "0.12%" },
     },
-    platelets: { count: 222, percentage: "222" },
+    platelets: { count: 222, percentage: "22%" }, // Fixed unrealistic 222%
   });
 
+  // 📡 Fetch Data from JSON Output
   useEffect(() => {
-    console.log("CaseContext: Initial imageSrc:", caseData.imageSrc);
+    console.log(
+      "%cCaseContext: Fetching Data...",
+      "color: cyan; font-weight: bold;"
+    );
+
     fetch("/output.json")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
+        if (!data.inference_results?.output?.detection_results) {
+          throw new Error("Invalid JSON structure: Missing detection_results");
+        }
+
         const results = data.inference_results.output.detection_results as [
           number,
           number,
@@ -48,26 +77,40 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({
           string
         ][];
 
-        // Filter detectionResults to focus on a specific region (e.g., top-left quadrant)
+        // 🎯 Filter Results to Focus on Top-Left Quadrant (Optional)
         const filteredResults = results
-          .filter(([x, y]) => {
-            return x < 300 && y < 300; // Example: Only include boxes in the top-left 300x300 area
-          })
-          .slice(0, 20); // Limit to 20 boxes for fewer, focused boxes
+          .filter(([x, y]) => x < 300 && y < 300) // Focus on top-left 300x300 region
+          .slice(0, 20); // Limit to 20 results for clarity
+
+        console.log(
+          "%cCaseContext: Successfully Loaded Data!",
+          "color: limegreen; font-weight: bold;"
+        );
 
         setCaseData((prev) => ({
           ...prev,
           detectionResults: filteredResults,
         }));
       })
-      .catch((err) => console.error("Error fetching output.json:", err));
+      .catch((err) => {
+        console.error(
+          "%cCaseContext: Error Fetching Data!",
+          "color: red; font-weight: bold;",
+          err
+        );
+      });
   }, []);
 
-  return (
-    <CaseContext.Provider value={{ caseData }}>{children}</CaseContext.Provider>
-  );
+  // Provide Context Value
+  const value = {
+    caseData,
+    detectionResults: caseData.detectionResults,
+  };
+
+  return <CaseContext.Provider value={value}>{children}</CaseContext.Provider>;
 };
 
+// 🎯 Custom Hook for CaseContext
 export const useCase = (): CaseContextType => {
   const context = useContext(CaseContext);
   if (!context) throw new Error("useCase must be used within a CaseProvider");

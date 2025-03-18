@@ -15,19 +15,13 @@ const ZoomedHub: React.FC<ZoomedHubProps> = ({ region }) => {
   useEffect(() => {
     setIsLoading(true);
     const img = new Image();
-    console.log("ZoomedHub: Attempting to load image from:", caseData.imageSrc);
     img.src = caseData.imageSrc;
     img.onload = () => {
-      console.log("ZoomedHub: Image loaded successfully:", {
-        width: img.width,
-        height: img.height,
-      });
       setImage(img);
       setIsLoading(false);
       setHasError(false);
     };
     img.onerror = () => {
-      console.error("ZoomedHub: Image failed to load:", caseData.imageSrc);
       setIsLoading(false);
       setHasError(true);
     };
@@ -55,26 +49,26 @@ const ZoomedHub: React.FC<ZoomedHubProps> = ({ region }) => {
     const offsetX = (canvas.width - scaledWidth) / 2;
     const offsetY = (canvas.height - scaledHeight) / 2;
 
-    ctx.fillStyle = "#fff5f5";
+    // Background fill for better contrast
+    ctx.fillStyle = "#1a202c";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
 
-    // Highlight the region of interest
-    const roiWidth = 50 * scale; // Adjustable ROI size
-    const roiHeight = 50 * scale;
-    const roiX = offsetX + region.x * (image.width * scale - roiWidth);
-    const roiY = offsetY + region.y * (image.height * scale - roiHeight);
-    ctx.strokeStyle = "red";
+    // Draw zoomed region indicator
+    const roiSize = 50 * scale;
+    const roiX = offsetX + region.x * (image.width * scale - roiSize);
+    const roiY = offsetY + region.y * (image.height * scale - roiSize);
+    ctx.strokeStyle = "#ffcc00"; // Yellow highlight for better visibility
     ctx.lineWidth = 2;
-    ctx.strokeRect(roiX, roiY, roiWidth, roiHeight);
+    ctx.strokeRect(roiX, roiY, roiSize, roiSize);
   }, [image, region]);
 
   return (
-    <div className="relative w-full h-40 border border-gray-300 rounded bg-white overflow-hidden">
+    <div className="relative w-full h-56 border border-gray-400 rounded-xl bg-gray-900 shadow-lg overflow-hidden">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
           <svg
-            className="animate-spin h-8 w-8 text-blue-500"
+            className="animate-spin h-10 w-10 text-blue-400"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -96,11 +90,20 @@ const ZoomedHub: React.FC<ZoomedHubProps> = ({ region }) => {
         </div>
       )}
       {hasError && !isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-600">
-          No Image Available (Check path: {caseData.imageSrc})
+        <div className="absolute inset-0 flex items-center justify-center bg-red-700 text-white text-lg font-semibold">
+          ❌ No Image Available <br />
+          <span className="text-sm">Check path: {caseData.imageSrc}</span>
         </div>
       )}
-      <canvas ref={canvasRef} className="w-full h-full" />
+      {!isLoading && !hasError && (
+        <div className="flex flex-col h-full">
+          <div className="text-center p-3 bg-gray-800 text-white font-semibold">
+            🔍 WSI Zoomed View (Hub)
+          </div>
+          <canvas ref={canvasRef} className="flex-1 w-full" />
+          <div className="flex justify-between p-3 bg-gray-800 text-white border-t border-gray-700"></div>
+        </div>
+      )}
     </div>
   );
 };

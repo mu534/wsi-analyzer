@@ -3,18 +3,19 @@ import { CaseProvider, useCase } from "./context/CaseContext";
 import ImageViewer from "./components/ImageViewer";
 import Sidebar from "./components/Sidebar";
 import ZoomedHub from "./components/ZoomedHub";
+import SummaryPanel from "./components/SummaryPanel";
 
 const App: React.FC = () => {
-  const { caseData } = useCase();
+  const { caseData, detectionResults } = useCase();
   const [region, setRegion] = useState({ x: 0.5, y: 0.5 });
-  const [detectionResults, setDetectionResults] = useState<
+  const [localDetectionResults, setLocalDetectionResults] = useState<
     [number, number, number, number, string][]
   >([]);
   const [isReferencesVisible, setIsReferencesVisible] = useState(false);
 
   useEffect(() => {
-    setDetectionResults(caseData.detectionResults);
-  }, [caseData.detectionResults]);
+    setLocalDetectionResults(detectionResults);
+  }, [detectionResults]);
 
   const timestamp = new Date().toLocaleString("en-US", {
     weekday: "short",
@@ -26,29 +27,36 @@ const App: React.FC = () => {
     second: "2-digit",
   });
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = (format: string) => {
     const data = `Patient ID: ${caseData.patientId}\nSample Type: ${
       caseData.sampleType
     }\nRBC Data: ${JSON.stringify(
-      caseData.rbcData
+      caseData.rbcData,
+      null,
+      2
     )}\nWBC Data: ${JSON.stringify(
-      caseData.wbcData
-    )}\nPlatelets: ${JSON.stringify(caseData.platelets)}`;
+      caseData.wbcData,
+      null,
+      2
+    )}\nPlatelets: ${JSON.stringify(caseData.platelets, null, 2)}`;
     const blob = new Blob([data], { type: "text/plain" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `report_${caseData.patientId}.txt`;
+    a.download = `report_${caseData.patientId}.${format}`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <button className="p-2 bg-gray-200 rounded">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 bg-white p-4 rounded-xl shadow-sm">
+        {/* Timestamp & Back Button */}
+        <div className="flex items-center space-x-3 mb-4 sm:mb-0">
+          <button className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-transform transform hover:scale-105">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -68,71 +76,87 @@ const App: React.FC = () => {
             {timestamp}
           </span>
         </div>
+
+        {/* References Button */}
         <button
           onClick={() => setIsReferencesVisible(!isReferencesVisible)}
-          className="bg-blue-200 p-2 rounded text-sm"
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-600 transition-transform transform hover:scale-105"
           title="Show References"
         >
-          References
+          📚 References
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex space-x-4">
-        {/* Left: Sidebar */}
-        <div className="w-1/4">
+      {/* Main Layout */}
+      <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-6">
+        {/* Sidebar */}
+        <div className="w-full lg:w-1/4">
           <Sidebar />
         </div>
 
-        {/* Right: WSI Viewer and Hub */}
-        <div className="w-3/4 flex flex-col space-y-4">
-          {/* Top: Hub View */}
-          <div className="flex justify-between items-center bg-gray-200 p-2 rounded">
-            <div className="flex space-x-2">
-              <span>WSI Zoomed out View (Hub)</span>
-              <span>Patient ID: {caseData.patientId}</span>
-              <span>{caseData.sampleType}</span>
-            </div>
-            <div className="w-1/3">
+        {/* Main Content */}
+        <div className="w-full lg:w-3/4 flex flex-col space-y-4 sm:space-y-6">
+          {/* Top Section: Summary & Zoomed View */}
+          <div className="flex flex-col md:flex-row items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm space-y-4 md:space-y-0 md:space-x-6">
+            <SummaryPanel />
+            <div className="w-full md:w-1/3">
               <ZoomedHub region={region} />
             </div>
           </div>
 
-          {/* Center: WSI Viewer */}
-          <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden relative">
+          {/* WSI Viewer */}
+          <div className="relative bg-white-900 rounded-xl overflow-hidden shadow-sm">
             <ImageViewer
               onRegionChange={setRegion}
-              detectionResults={detectionResults}
+              detectionResults={localDetectionResults}
             />
-            <div className="absolute top-2 left-2 text-white">
-              WSI Zoomed IN View
+            <div className="absolute top-2 left-2 text-white font-semibold bg-gray-800 px-3 py-1 rounded-lg">
+              🔬 WSI Zoomed IN View
             </div>
           </div>
-
-          {/* Bottom Right: Report Button */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleDownloadReport}
-              className="bg-blue-500 text-white p-2 rounded"
-              title="Download Report"
-            >
-              Download Report
-            </button>
+          {/* Report Download Button */}
+          <div className="flex justify-center mt-6">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => handleDownloadReport("txt")}
+                className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                title="Download Report as TXT"
+              >
+                <span className="font-medium">📄 TXT</span>
+              </button>
+              <button
+                onClick={() => handleDownloadReport("json")}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                title="Download Report as JSON"
+              >
+                <span className="font-medium">🧾 JSON</span>
+              </button>
+              <button
+                onClick={() => handleDownloadReport("csv")}
+                className="bg-yellow-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-yellow-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all"
+                title="Download Report as CSV"
+              >
+                <span className="font-medium">📊 CSV</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* References Modal */}
       {isReferencesVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded shadow-lg max-w-md">
-            <h3 className="text-lg font-bold mb-2">References</h3>
-            <ul className="list-disc pl-5">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg max-w-lg w-full mx-4">
+            <h3 className="text-lg font-bold mb-4 text-gray-800">
+              📚 References
+            </h3>
+            <ul className="list-disc pl-5 space-y-2 text-gray-700">
               <li>
                 <a
                   href="https://dicom.nema.org/"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
                 >
                   DICOM Standard
                 </a>{" "}
@@ -143,6 +167,7 @@ const App: React.FC = () => {
                   href="https://openslide.org/"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
                 >
                   OpenSlide
                 </a>{" "}
@@ -153,18 +178,21 @@ const App: React.FC = () => {
                   href="https://qupath.github.io/"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
                 >
                   QuPath
                 </a>{" "}
                 - Open-source software for bioimage analysis.
               </li>
             </ul>
-            <button
-              onClick={() => setIsReferencesVisible(false)}
-              className="mt-4 bg-blue-500 text-white p-2 rounded"
-            >
-              Close
-            </button>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setIsReferencesVisible(false)}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-red-600 transition-transform transform hover:scale-105"
+              >
+                ❌ Close
+              </button>
+            </div>
           </div>
         </div>
       )}

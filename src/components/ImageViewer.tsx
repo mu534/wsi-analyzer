@@ -18,40 +18,21 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const [zoomRegion, setZoomRegion] = useState<{ x: number; y: number }>({
     x: 0.5,
     y: 0.5,
-  }); // Center by default
-  const [zoomFactor] = useState(3); // Fixed zoom factor for inset
+  });
+  const [zoomFactor] = useState(3);
   const [lastInteractionTime, setLastInteractionTime] = useState<string>("");
 
   useEffect(() => {
     setIsLoading(true);
     const img = new Image();
-    console.log(
-      "ImageViewer: Attempting to load image from:",
-      caseData.imageSrc
-    );
     img.src = caseData.imageSrc;
     img.onload = () => {
-      console.log("ImageViewer: Image loaded successfully:", {
-        width: img.width,
-        height: img.height,
-      });
       setImage(img);
       setHasError(false);
       setIsLoading(false);
-      setLastInteractionTime(
-        new Date().toLocaleString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-      );
+      setLastInteractionTime(new Date().toLocaleString());
     };
     img.onerror = () => {
-      console.error("ImageViewer: Image failed to load:", caseData.imageSrc);
       setHasError(true);
       setIsLoading(false);
     };
@@ -59,33 +40,24 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !image) {
-      console.log("ImageViewer: Canvas or image not available:", {
-        canvas,
-        image,
-      });
-      return;
-    }
+    if (!canvas || !image) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas size to match image
     canvas.width = image.width;
     canvas.height = image.height;
 
-    // Draw the main image
-    ctx.fillStyle = "#fff5f5"; // Light pinkish background to match the image
+    ctx.fillStyle = "#1a202c"; // Dark blue-gray background
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, 0, 0);
 
-    // Draw bounding boxes
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 1; // Thin border to match the image
+    ctx.strokeStyle = "#00ffcc"; // Cyan for better visibility
+    ctx.lineWidth = 1.5;
     detectionResults.forEach(([x, y, w, h, label]) => {
       ctx.strokeRect(x, y, w, h);
       ctx.fillStyle = "white";
-      ctx.fillText(label, x, y - 5);
+      ctx.fillText(label, x + 5, y - 5);
     });
   }, [image, detectionResults]);
 
@@ -94,39 +66,29 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
     onRegionChange({ x, y });
-    setZoomRegion({ x, y }); // Update zoom region based on mouse position
-    setLastInteractionTime(
-      new Date().toLocaleString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-    );
+    setZoomRegion({ x, y });
+    setLastInteractionTime(new Date().toLocaleTimeString());
   };
 
-  // Memoized drawZoomedInset for performance
   const drawZoomedInset = useCallback(
     (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
       if (!image) return;
 
-      const insetSize = 200;
-      const insetX = canvas.width - insetSize - 10;
-      const insetY = 10;
+      const insetSize = 220;
+      const insetX = canvas.width - insetSize - 15;
+      const insetY = 15;
 
-      // Draw inset background
-      ctx.fillStyle = "white";
+      ctx.fillStyle = "#121826"; // Deep dark inset background
       ctx.fillRect(insetX, insetY, insetSize, insetSize);
-      ctx.strokeStyle = "black";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#00ffcc";
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(insetX, insetY, insetSize, insetSize);
 
-      // Calculate the zoomed region
       const zoomX = zoomRegion.x * image.width - insetSize / zoomFactor / 2;
       const zoomY = zoomRegion.y * image.height - insetSize / zoomFactor / 2;
       const zoomedWidth = image.width / zoomFactor;
       const zoomedHeight = image.height / zoomFactor;
 
-      // Draw the zoomed portion
       ctx.drawImage(
         image,
         zoomX,
@@ -139,9 +101,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         insetSize
       );
 
-      // Draw bounding boxes in the zoomed inset
-      ctx.strokeStyle = "blue";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#ffcc00"; // Yellow bounding boxes in zoomed view
+      ctx.lineWidth = 1.2;
       detectionResults.forEach(([x, y, w, h]) => {
         const scaledX = (x - zoomX) * (insetSize / zoomedWidth) + insetX;
         const scaledY = (y - zoomY) * (insetSize / zoomedHeight) + insetY;
@@ -171,15 +132,15 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   }, [drawZoomedInset, image, detectionResults]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-gray-900 rounded-lg shadow-lg overflow-hidden">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white text-lg font-semibold animate-pulse">
           Loading Image...
         </div>
       )}
       {hasError && !isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
-          No Image Available (Check path: {caseData.imageSrc})
+        <div className="absolute inset-0 flex items-center justify-center bg-red-800 text-white text-lg font-semibold rounded-md shadow-md">
+          ❌ No Image Available (Check path: {caseData.imageSrc})
         </div>
       )}
       <canvas
@@ -187,12 +148,12 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         onMouseMove={handleMouseMove}
         className="w-full h-full cursor-crosshair"
         style={{
-          backgroundColor: "#2d3748",
+          backgroundColor: "#1a202c",
           display: hasError || isLoading ? "none" : "block",
         }}
       />
-      <div className="absolute bottom-2 left-2 text-white text-sm">
-        Last Interaction: {lastInteractionTime}
+      <div className="absolute bottom-2 left-2 bg-gray-800 text-white text-sm px-3 py-1 rounded-md shadow-md">
+        ⏳ Last Interaction: {lastInteractionTime}
       </div>
     </div>
   );
