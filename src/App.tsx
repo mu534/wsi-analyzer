@@ -114,7 +114,7 @@ const App: React.FC = () => {
 
           {/* Download Buttons */}
           <div className="flex justify-center mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className=" grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { format: "txt", color: "green", icon: "📄" },
                 { format: "json", color: "blue", icon: "🧾" },
@@ -123,7 +123,7 @@ const App: React.FC = () => {
                 <button
                   key={format}
                   onClick={() => handleDownloadReport(format)}
-                  className={`bg-${color}-600 text-white px-6 py-3 rounded-xl shadow-md hover:bg-${color}-700 focus:ring-2 focus:ring-${color}-500 transition-all duration-200 transform hover:scale-110 hover:-translate-y-1 flex items-center space-x-2`}
+                  className={`bg-${color}-600 text-white bg-blue-950 px-6 py-3 rounded-xl shadow-md hover:bg-${color}-500 focus:ring-2 focus:ring-${color}-500 transition-all duration-200 transform hover:scale-110 hover:-translate-y-1 flex items-center space-x-2`}
                 >
                   <span>{icon}</span>
                   <span className="font-medium uppercase">{format}</span>
