@@ -9,6 +9,7 @@ import WSIImage from "../assets/images/7_20241209_024613.png";
 
 // 📝 Define CaseData Interface
 interface CaseData {
+  filename: unknown;
   patientId: string;
   sampleType: string;
   imageSrc: string;
@@ -31,6 +32,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [caseData, setCaseData] = useState<CaseData>({
+    filename: null,
     patientId: "Case-2025-001",
     sampleType: "Blood",
     imageSrc: WSIImage,
