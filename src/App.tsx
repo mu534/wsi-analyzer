@@ -10,12 +10,12 @@ const App: React.FC = () => {
   const [detectionResults, setDetectionResults] = useState<
     [number, number, number, number, string][]
   >([]);
+  const [isReferencesVisible, setIsReferencesVisible] = useState(false);
 
   useEffect(() => {
     setDetectionResults(caseData.detectionResults);
   }, [caseData.detectionResults]);
 
-  // Format timestamp to match wireframe
   const timestamp = new Date().toLocaleString("en-US", {
     weekday: "short",
     month: "short",
@@ -26,8 +26,25 @@ const App: React.FC = () => {
     second: "2-digit",
   });
 
+  const handleDownloadReport = () => {
+    const data = `Patient ID: ${caseData.patientId}\nSample Type: ${
+      caseData.sampleType
+    }\nRBC Data: ${JSON.stringify(
+      caseData.rbcData
+    )}\nWBC Data: ${JSON.stringify(
+      caseData.wbcData
+    )}\nPlatelets: ${JSON.stringify(caseData.platelets)}`;
+    const blob = new Blob([data], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report_${caseData.patientId}.txt`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 p-4 flex flex-col">
+    <div className="min-h-screen bg-gray-100 p-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
@@ -51,10 +68,17 @@ const App: React.FC = () => {
             {timestamp}
           </span>
         </div>
+        <button
+          onClick={() => setIsReferencesVisible(!isReferencesVisible)}
+          className="bg-blue-200 p-2 rounded text-sm"
+          title="Show References"
+        >
+          References
+        </button>
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 space-x-4">
+      <div className="flex space-x-4">
         {/* Left: Sidebar */}
         <div className="w-1/4">
           <Sidebar />
@@ -87,12 +111,63 @@ const App: React.FC = () => {
 
           {/* Bottom Right: Report Button */}
           <div className="flex justify-end">
-            <button className="bg-blue-500 text-white p-2 rounded">
-              Report
+            <button
+              onClick={handleDownloadReport}
+              className="bg-blue-500 text-white p-2 rounded"
+              title="Download Report"
+            >
+              Download Report
             </button>
           </div>
         </div>
       </div>
+
+      {/* References Modal */}
+      {isReferencesVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded shadow-lg max-w-md">
+            <h3 className="text-lg font-bold mb-2">References</h3>
+            <ul className="list-disc pl-5">
+              <li>
+                <a
+                  href="https://dicom.nema.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  DICOM Standard
+                </a>{" "}
+                - For medical imaging protocols.
+              </li>
+              <li>
+                <a
+                  href="https://openslide.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  OpenSlide
+                </a>{" "}
+                - Open-source WSI viewer library.
+              </li>
+              <li>
+                <a
+                  href="https://qupath.github.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  QuPath
+                </a>{" "}
+                - Open-source software for bioimage analysis.
+              </li>
+            </ul>
+            <button
+              onClick={() => setIsReferencesVisible(false)}
+              className="mt-4 bg-blue-500 text-white p-2 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

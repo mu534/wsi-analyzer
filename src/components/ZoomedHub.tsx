@@ -40,14 +40,12 @@ const ZoomedHub: React.FC<ZoomedHubProps> = ({ region }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas size to fit the container
     const container = canvas.parentElement;
     if (container) {
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
     }
 
-    // Draw the entire image scaled to fit
     const scale = Math.min(
       canvas.width / image.width,
       canvas.height / image.height
@@ -61,13 +59,14 @@ const ZoomedHub: React.FC<ZoomedHubProps> = ({ region }) => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight);
 
-    // Draw pointer indicating the viewed region
-    const pointerX = offsetX + region.x * scaledWidth;
-    const pointerY = offsetY + region.y * scaledHeight;
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.arc(pointerX, pointerY, 5, 0, 2 * Math.PI);
-    ctx.fill();
+    // Highlight the region of interest
+    const roiWidth = 50 * scale; // Adjustable ROI size
+    const roiHeight = 50 * scale;
+    const roiX = offsetX + region.x * (image.width * scale - roiWidth);
+    const roiY = offsetY + region.y * (image.height * scale - roiHeight);
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(roiX, roiY, roiWidth, roiHeight);
   }, [image, region]);
 
   return (

@@ -5,11 +5,16 @@ const Sidebar: React.FC = () => {
   const { caseData } = useCase();
 
   return (
-    <div className="p-4 bg-green-100 rounded-md w-80 h-full">
+    <div className="p-4 bg-green-100 rounded-md w-full">
       <div className="space-y-4">
         {/* RBC Section */}
         <div>
-          <h3 className="text-lg font-semibold mb-2">RBC</h3>
+          <h3
+            className="text-lg font-semibold mb-2"
+            title="Red Blood Cell Counts"
+          >
+            RBC
+          </h3>
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-green-200">
@@ -23,7 +28,9 @@ const Sidebar: React.FC = () => {
             <tbody>
               {Object.entries(caseData.rbcData).map(([key, value]) => (
                 <tr key={key}>
-                  <td className="border border-gray-300 p-2">{key}</td>
+                  <td className="border border-gray-300 p-2" title={key}>
+                    {key}
+                  </td>
                   <td className="border border-gray-300 p-2">{value.count}</td>
                   <td className="border border-gray-300 p-2">
                     {value.percentage}
@@ -36,7 +43,12 @@ const Sidebar: React.FC = () => {
 
         {/* WBC Section */}
         <div>
-          <h3 className="text-lg font-semibold mb-2">WBC</h3>
+          <h3
+            className="text-lg font-semibold mb-2"
+            title="White Blood Cell Counts"
+          >
+            WBC
+          </h3>
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-green-200">
@@ -50,7 +62,9 @@ const Sidebar: React.FC = () => {
             <tbody>
               {Object.entries(caseData.wbcData).map(([key, value]) => (
                 <tr key={key}>
-                  <td className="border border-gray-300 p-2">{key}</td>
+                  <td className="border border-gray-300 p-2" title={key}>
+                    {key}
+                  </td>
                   <td className="border border-gray-300 p-2">{value.count}</td>
                   <td className="border border-gray-300 p-2">
                     {value.percentage}
@@ -63,7 +77,9 @@ const Sidebar: React.FC = () => {
 
         {/* Platelets Section */}
         <div>
-          <h3 className="text-lg font-semibold mb-2">Platelets</h3>
+          <h3 className="text-lg font-semibold mb-2" title="Platelet Counts">
+            Platelets
+          </h3>
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-green-200">
